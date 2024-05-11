@@ -82,7 +82,6 @@ async def ocr_and_upload_embeddings(signed_url: str):
     # Return OCR result and embeddings
     return OCRResult(text=data, embeddings=embeddings)
 
-
 # Initialize Minio client
 minio_client = Minio(
     endpoint = "127.0.0.1:9000",
@@ -102,12 +101,13 @@ async def upload_files(files: List[UploadFile] = File(...)):
     uploaded_files_urls = []
 
     for afile in files:
-        file_extension = afile.split(".")[-1].lower()
+        file_extension = afile.filename.split(".")[-1].lower()
         if file_extension not in ACCEPTED_FORMATS:
             raise HTTPException(status_code=400, detail=f"Unsupported file format: {file_extension}")
 
         # Read the file content
-        with open(afile, 'rb') as f:
+        filepath = 'media/' + afile.filename
+        with open(filepath, 'rb') as f:
             contents = f.read()
 
         # Generate a unique file identifier
@@ -131,7 +131,6 @@ async def upload_files(files: List[UploadFile] = File(...)):
 
     return uploaded_files_urls
 
-
 # Takes a query text and file_id as input, performs a vector search and
 # returns matching attributes based on the embeddings. The vector search
 # will help in identifying the relevant part(s) of the file and you may
@@ -140,6 +139,7 @@ async def upload_files(files: List[UploadFile] = File(...)):
 @app.post('/extract')
 async def create_chat(request: Request):
     payload = await request.json()
+    #payload = await request.body()
 
     if 'message' not in payload:
         return jsonify(message='No message provided'), 400

@@ -34,6 +34,13 @@ $ python3
 curl -X POST -H "Content-Type: application/json" -d '{"message":"Who is David Witka?"}' http://localhost:8000/extract
 ```
 
+# upload one or more files to minio server
+```
+$ curl -X POST -F "files=@media/resume.pdf" http://localhost:8000/upload
+
+$ curl -X POST -F "files=@media/resume.pdf" -F "files=@media/SoftDocs.pdf" http://localhost:8000/upload
+```
+
 HOW DOES THIS APP WORK?
 1. load files to minio
 2. get file from minio and simulate ocr
