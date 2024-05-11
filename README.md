@@ -22,9 +22,9 @@ Instructions are for Debian/Ubuntu systems:
 $ git init .
 ```
 
-### clone repository from github
+### clone repository from github, replace <pat> with your personal access token
 ```
-$ git clone https://github.com/dwitka/Augmented-Generation-w-OCR.git
+$ git clone https://<pat>@github.com/dwitka/Augmented-Generation-w-OCR.git
 ```
 
 ### get the minio package and install, create a minio directory
