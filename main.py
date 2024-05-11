@@ -23,10 +23,10 @@ from io import BytesIO
 from PIL import Image
 from langchain_openai import OpenAIEmbeddings
 import os
+import openai
 import json
 import requests
 import uuid
-import embeddingsAI
 
 app = FastAPI()
 
@@ -124,7 +124,9 @@ async def ocr_and_upload_embeddings(request: Request):
 
     # Process OCR results with OpenAI's embedding models
     try:
-        embeddings = embeddingsAI.get_embedding(data)
+        client = openai.OpenAI(api_key=OPENAI_API_KEY)
+        client.embeddings.create(input = [data], model="text-embedding-3-small").data[0].embedding
+        #embeddings = embeddingsAI.get_embedding(data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate embeddings: {str(e)}")
 
