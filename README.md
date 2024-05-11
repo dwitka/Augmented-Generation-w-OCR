@@ -2,6 +2,23 @@
 
 Instructions are for Debian/Ubuntu systems:
 
+### OVERVIEW
+1. initiate local git repository
+2. pull repository from github
+3. get minio setup
+4. get pinecone setup
+5. you will need a openai api_key https://platform.openai.com/
+6. set up your virtual environment
+7. install dependencies
+8. start minio server
+9. start fastapi server
+10. test upload endpoint with curl
+        -confirm results
+11. test ocr endpoint with curl
+        -confirm results
+12. test extract endpoint with curl
+        -confirm results
+
 ### get the minio package and install
 ```
 $ wget https://dl.min.io/server/minio/release/linux-amd64/archive/minio_20240507064125.0.0_amd64.deb -O minio.deb
