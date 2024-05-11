@@ -50,38 +50,6 @@ class OCRResult(BaseModel):
     text: str
     embeddings: List[float]
 
-# Simulates running an OCR service on a file for a given a signed url.
-# Process OCR results with OpenAI's embedding models, then upload the
-# embeddings to a vector database (e.g, Pinecone) for future searches.
-@app.post("/ocr")
-async def ocr_and_upload_embeddings(signed_url: str):
-    # Simulate running OCR service on the file from signed URL
-    try:
-        response = requests.get(signed_url)
-        print(type(response))
-        if response.status_code != 200:
-            raise HTTPException(status_code=400, detail="Failed to fetch file from signed URL")
-        with open('ocr/test.json') as f:
-            data = json.load(f)
-            data = json.dumps(data)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to perform OCR: {str(e)}")
-    
-    # Process OCR results with OpenAI's embedding models
-    try:
-        embeddings = embeddingsAI.get_embedding(data)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to generate embeddings: {str(e)}")
-
-    # Upload embeddings to Pinecone vector database
-    try:
-        idx.upsert([(signed_url, embeddings)])
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to upload embeddings to Pinecone: {str(e)}")
-
-    # Return OCR result and embeddings
-    return OCRResult(text=data, embeddings=embeddings)
-
 # Initialize Minio client
 minio_client = Minio(
     endpoint = "127.0.0.1:9000",
@@ -92,6 +60,7 @@ minio_client = Minio(
 
 # Accepts one or more file uploads (limited to pdf, tiff, png,jpeg formats).
 ACCEPTED_FORMATS = ["pdf", "tiff", "png", "jpeg"]
+
 
 # Saves the processed file to a cloud storage solution, returning one or
 # more unique file identifiers or signed URLs for the upload. You can use
@@ -131,6 +100,44 @@ async def upload_files(files: List[UploadFile] = File(...)):
 
     return uploaded_files_urls
 
+
+# Simulates running an OCR service on a file for a given a signed url.
+# Process OCR results with OpenAI's embedding models, then upload the
+# embeddings to a vector database (e.g, Pinecone) for future searches.
+@app.post("/ocr")
+async def ocr_and_upload_embeddings(request: Request):
+    payload = await request.json()
+    
+    # Retrieve signed url from payload
+    try:
+        url = payload["url"]
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"No url provided: {str(e)}")
+    
+    # Simulate running OCR service on the file from signed URL
+    try:
+        with open('ocr/test.json') as f:
+            data = json.load(f)
+            data = json.dumps(data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to perform OCR: {str(e)}")
+
+    # Process OCR results with OpenAI's embedding models
+    try:
+        embeddings = embeddingsAI.get_embedding(data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate embeddings: {str(e)}")
+
+    # Upload embeddings to Pinecone vector database
+    try:
+        idx.upsert([(url, embeddings)])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to upload embeddings to Pinecone: {str(e)}")
+
+    # Return OCR result and embeddings
+    return OCRResult(text=data, embeddings=embeddings)
+
+
 # Takes a query text and file_id as input, performs a vector search and
 # returns matching attributes based on the embeddings. The vector search
 # will help in identifying the relevant part(s) of the file and you may
@@ -139,10 +146,10 @@ async def upload_files(files: List[UploadFile] = File(...)):
 @app.post('/extract')
 async def create_chat(request: Request):
     payload = await request.json()
-    #payload = await request.body()
-
-    if 'message' not in payload:
-        return jsonify(message='No message provided'), 400
+    try:
+        query = payload["message"]
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"No message provided: {str(e)}")
 
     openai_key = OPENAI_API_KEY
     embeddings = OpenAIEmbeddings(openai_api_key=openai_key)
@@ -154,7 +161,6 @@ async def create_chat(request: Request):
     llm = OpenAI(temperature=0, openai_api_key=openai_key)
     chain = load_qa_chain(llm, chain_type="stuff")
 
-    query = payload["message"]
     docs = docsearch.similarity_search(query)
     response = chain.run(input_documents=docs, question=query)
 
