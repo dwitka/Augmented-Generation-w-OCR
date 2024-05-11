@@ -1,48 +1,61 @@
-### https://min.io/docs/minio/linux/index.html
+# Retrieval-Augmented Generation (RAG) with Optical Character Recoginition (OCR)
 
 Instructions are for Debian/Ubuntu systems:
 
 ### OVERVIEW
 1. initiate local git repository
-2. pull repository from github
+2. clone repository from github
 3. get minio setup
-4. get pinecone setup
+4. get a pinecone api_key from https://pinecone.io
 5. you will need a openai api_key https://platform.openai.com/
-6. set up your virtual environment
-7. install dependencies
-8. start minio server
-9. start fastapi server
-10. test upload endpoint with curl
-        -confirm results
-11. test ocr endpoint with curl
-        -confirm results
-12. test extract endpoint with curl
-        -confirm results
+6. add your api_keys to config.py
+7. set up your virtual environment
+8. install dependencies
+9. start minio server
+10. start fastapi server
+11. test upload endpoint with curl, confirm results
+12. test ocr endpoint with curl, confirm results
+13. test extract endpoint with curl, confirm results
 
-### get the minio package and install
+### initiate local git repository
+```
+$ git init .
+```
+
+### clone repository from github
+```
+$ git clone https://github.com/dwitka/Augmented-Generation-w-OCR.git
+```
+
+### get the minio package and install, create a minio directory
 ```
 $ wget https://dl.min.io/server/minio/release/linux-amd64/archive/minio_20240507064125.0.0_amd64.deb -O minio.deb
 $ sudo dpkg -i minio.deb
+$ mkdir ./minio
 ```
 
-### make a minio directory and then run the server
+### get your api_keys
+        - get a pinecone api_key from https://pinecone.io
+        - you will need a openai api_key https://platform.openai.com/
+
+### set up your virtual environment in the same folder as your git repository, activate
 ```
-$ mkdir ./minio
+$ python3 -m venv venv
+$ source venv/bin/activate
+```
+
+### install your dependencies
+```
+$ pip install -r requirements.txt
+```
+
+### open a second terminal window and run the minio server
+```
 $ minio server ./minio --console-address :9001
 ```
-
-### install minio interface for python
+### open a third terminal window and start the fastapi server
 ```
-$ pip3 install minio
-```
-
-### test functionality of two endpoints
-```
-$ python3
->>> import main
->>> import asyncio
->>> x = asyncio.run(main.upload_files(["ocr/test.json"]))
->>> y = asyncio.run(main.ocr_and_upload_embeddings(x[0]['url']))
+fastapi dev main.py
 ```
 
 ### test upload endpoint: upload one or more files to minio server
