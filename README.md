@@ -53,6 +53,11 @@ $ pip install -r requirements.txt
 ```
 $ minio server ./minio --console-address :9001
 ```
+
+### open the minio portal in your web browser localhost:9001
+        - enter credentials given from minio server
+        - create a bucket named 'first'
+
 ### open a third terminal window and start the fastapi server
 ```
 fastapi dev main.py
@@ -65,14 +70,16 @@ $ curl -X POST -F "files=@media/resume.pdf" http://localhost:8000/upload
 $ curl -X POST -F "files=@media/resume.pdf" -F "files=@media/SoftDocs.pdf" http://localhost:8000/upload
 ```
 
+### confrim that your bucket received the file(s) and it can be downloaded
+
 ### test ocr endpoint: ocr and embeddings test
 ```
-curl -X POST -H "Content-Type: application/json" -d '{"url":"http://127.0.0.1:9000/first/0c1e44cb-bdd3-4f47-bffb-22d9db8ed421?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20240511%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240511T030230Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=84e5fc6a3f12199d93f78c170085fc83955bd086a58b80492fc11d1c56228443"}' http://localhost:8000/ocr
+curl -X POST -H "Content-Type: application/json" -d '{"url":"http://127.0.0.1:9000/first/acd9af0e-2708-4909-b81c-2eeb2009888a?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20240512%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240512T000021Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=2cd3409b453a17f74205282b70dff1dc411fbf35a532bce47008a686431ab0e9"}' http://localhost:8000/ocr
 ```
 
 ### test extract endpoint: extract attributes
 ```
-$ curl -X POST -H "Content-Type: application/json" -d '{"message":"Who is David Witka?"}' http://localhost:8000/extract
+$ curl -X POST -H "Content-Type: application/json" -d '{"message":"How much money does User2 want for the bag?"}' http://localhost:8000/extract
 ```
 
 # HOW DOES THIS APP WORK?
