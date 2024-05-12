@@ -23,7 +23,7 @@ from typing import List
 from io import BytesIO
 from PIL import Image
 from langchain_openai import OpenAIEmbeddings
-from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import PyPDFLoader, JSONLoader
 import os
 import openai
 import json
@@ -118,22 +118,23 @@ async def ocr_and_upload_embeddings(request: Request):
     
     # Simulate running OCR service on the file from signed URL
     try:
-        loader = PyPDFLoader(url)
+        loader = JSONLoader(file_path="./ocr/test2.json", jq_schema=".messages[].content", text_content=False)
         data = loader.load()
+        # split into chunks
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=0)
         texts = text_splitter.split_documents(data)
-        #with open('media/resume.pdf') as f:
-            #data = json.load(f)
-            #data = json.dumps(data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to perform OCR: {str(e)}")
 
     # Process OCR results with OpenAI's embedding models
     try:
+        #json
         #client = openai.OpenAI(api_key=OPENAI_API_KEY)
         #model="text-embedding-3-small"
         #embeddings = client.embeddings.create(input = [data], model=model).data[0].embedding
         #embeddings = embeddingsAI.get_embedding(data)
+
+        #pdf
         openai_key = OPENAI_API_KEY
         embeddings = OpenAIEmbeddings(openai_api_key=openai_key)
     except Exception as e:
@@ -141,7 +142,10 @@ async def ocr_and_upload_embeddings(request: Request):
 
     # Upload embeddings to Pinecone vector database
     try:
+        #json
         #idx.upsert([(url, embeddings)])
+
+        #pdf
         # upload embeddings to Pinecone
         index_name = 'embed-project' # replace with your index name
         os.environ['PINECONE_API_KEY'] = PINECONE_API_KEY
@@ -151,7 +155,7 @@ async def ocr_and_upload_embeddings(request: Request):
         raise HTTPException(status_code=500, detail=f"Failed to upload embeddings to Pinecone: {str(e)}")
 
     # Return OCR result and embeddings
-    return texts
+    return "COMPLETE!!!"
 
 
 # Takes a query text and file_id as input, performs a vector search and
