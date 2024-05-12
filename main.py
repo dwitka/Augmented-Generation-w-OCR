@@ -13,6 +13,7 @@ pip install -U langchain-openai
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from pinecone import Pinecone, ServerlessSpec, Index
 from keys import PINECONE_API_KEY, OPENAI_API_KEY
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pydantic import BaseModel
 from langchain_pinecone import Pinecone as PC
 from langchain_openai import OpenAI
@@ -22,6 +23,7 @@ from typing import List
 from io import BytesIO
 from PIL import Image
 from langchain_openai import OpenAIEmbeddings
+from langchain_community.document_loaders import PyPDFLoader
 import os
 import openai
 import json
@@ -33,21 +35,21 @@ app = FastAPI()
 # Initialize Pinecone client
 pc = Pinecone(api_key=PINECONE_API_KEY)
 
-index = "docs-quickstart-index"
+index = "embed-project"
 if index not in pc.list_indexes().names():
         pc.create_index(
             name=index, 
             dimension=1536, 
-            metric='euclidean',
+            metric='cosine',
             spec=ServerlessSpec(
                 cloud='aws',
                 region='us-east-1'
             )
         )
-idx = pc.Index("docs-quickstart-index")
+idx = pc.Index(index)
 
 class OCRResult(BaseModel):
-    text: str
+    #text: str
     embeddings: List[float]
 
 # Initialize Minio client
@@ -116,28 +118,40 @@ async def ocr_and_upload_embeddings(request: Request):
     
     # Simulate running OCR service on the file from signed URL
     try:
-        with open('ocr/test.json') as f:
-            data = json.load(f)
-            data = json.dumps(data)
+        loader = PyPDFLoader(url)
+        data = loader.load()
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=0)
+        texts = text_splitter.split_documents(data)
+        #with open('media/resume.pdf') as f:
+            #data = json.load(f)
+            #data = json.dumps(data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to perform OCR: {str(e)}")
 
     # Process OCR results with OpenAI's embedding models
     try:
-        client = openai.OpenAI(api_key=OPENAI_API_KEY)
-        client.embeddings.create(input = [data], model="text-embedding-3-small").data[0].embedding
+        #client = openai.OpenAI(api_key=OPENAI_API_KEY)
+        #model="text-embedding-3-small"
+        #embeddings = client.embeddings.create(input = [data], model=model).data[0].embedding
         #embeddings = embeddingsAI.get_embedding(data)
+        openai_key = OPENAI_API_KEY
+        embeddings = OpenAIEmbeddings(openai_api_key=openai_key)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate embeddings: {str(e)}")
 
     # Upload embeddings to Pinecone vector database
     try:
-        idx.upsert([(url, embeddings)])
+        #idx.upsert([(url, embeddings)])
+        # upload embeddings to Pinecone
+        index_name = 'embed-project' # replace with your index name
+        os.environ['PINECONE_API_KEY'] = PINECONE_API_KEY
+        # upload to our pinecone index
+        PC.from_texts([t.page_content for t in texts], embeddings, index_name=index_name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to upload embeddings to Pinecone: {str(e)}")
 
     # Return OCR result and embeddings
-    return OCRResult(text=data, embeddings=embeddings)
+    return texts
 
 
 # Takes a query text and file_id as input, performs a vector search and
