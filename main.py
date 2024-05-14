@@ -60,10 +60,10 @@ idx = pc.Index(index)
 
 # Initialize Minio client
 minio_client = Minio(
-    endpoint = "127.0.0.1:9000",
+    endpoint = "play.minio.io:9000",
     access_key="minioadmin",
     secret_key="minioadmin",
-    secure=False
+    secure=True
 )
 
 # Accepts one or more file uploads (limited to pdf, tiff, png,jpeg formats).
@@ -179,14 +179,18 @@ async def create_chat(request: Request):
 
     try:
         query = payload["message"]
+        logging.info(f"Received message: {query}")
     except Exception as e:
         logging.error(f"No message provided: {str(e)}")
         raise HTTPException(status_code=400, detail=f"No message provided: {str(e)}")
 
-    logging.info(f"Received message: {query}")
-
-    openai_key = OPENAI_API_KEY
-    embeddings = OpenAIEmbeddings(openai_api_key=openai_key)
+    try:
+        openai_key = OPENAI_API_KEY
+        embeddings = OpenAIEmbeddings(openai_api_key=openai_key)
+        logging.info('Embeddings generated successfully')
+    except Exception as e:
+        logging.error(f"Failed to generate embeddings: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate embeddings: {str(e)}")
     
     index_name = "embed-project"
     os.environ['PINECONE_API_KEY'] = PINECONE_API_KEY
