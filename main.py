@@ -47,13 +47,13 @@ pc = Pinecone(api_key=PINECONE_API_KEY)
 
 index = "embed-project"
 if index not in pc.list_indexes().names():
-        pc.create_index(
-            name=index, 
-            dimension=1536, 
-            metric='cosine',
-            spec=ServerlessSpec(
-                cloud='aws',
-                region='us-east-1'
+    pc.create_index(
+        name=index,
+        dimension=1536,
+        metric='cosine',
+        spec=ServerlessSpec(
+            cloud='aws',
+            region='us-east-1'
             )
         )
 idx = pc.Index(index)
@@ -82,7 +82,8 @@ async def upload_files(files: List[UploadFile] = File(...)):
         file_extension = afile.filename.split(".")[-1].lower()
         if file_extension not in ACCEPTED_FORMATS:
             logging.error(f"Unsupported file format: {file_extension}")
-            raise HTTPException(status_code=400, detail=f"Unsupported file format: {file_extension}")
+            raise HTTPException(status_code=400, \
+                                    detail=f"Unsupported file format: {file_extension}")
 
         # Read the file content
         filepath = 'test/' + afile.filename
@@ -122,7 +123,7 @@ async def upload_files(files: List[UploadFile] = File(...)):
 async def ocr_and_upload_embeddings(request: Request):
     logging.info('Endpoint /ocr called')
     payload = await request.json()
-    
+
     # Retrieve signed url from payload
     try:
         url = payload["url"]
@@ -130,7 +131,7 @@ async def ocr_and_upload_embeddings(request: Request):
     except Exception as e:
         logging.error(f"No URL provided: {str(e)}")
         raise HTTPException(status_code=400, detail=f"No url provided: {str(e)}")
-    
+
     # Simulate running OCR service on the file from signed URL
     try:
         loader = JSONLoader(file_path="./ocr/test.json", jq_schema=".", text_content=False)
@@ -162,7 +163,8 @@ async def ocr_and_upload_embeddings(request: Request):
         logging.info('Embeddings uploaded to Pinecone successfully')
     except Exception as e:
         logging.error(f"Failed to upload embeddings to Pinecone: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to upload embeddings to Pinecone: {str(e)}")
+        raise HTTPException(status_code=500, \
+                                detail=f"Failed to upload embeddings to Pinecone: {str(e)}")
 
     return "Embeddings uploaded to Pinecone successfully"
 
@@ -170,7 +172,7 @@ async def ocr_and_upload_embeddings(request: Request):
 # Takes a query text and file_id as input, performs a vector search and
 # returns matching attributes based on the embeddings. The vector search
 # will help in identifying the relevant part(s) of the file and you may
-# need to call openAI chat completion to generate the answer from the 
+# need to call openAI chat completion to generate the answer from the
 # search result.
 @app.post('/extract')
 async def create_chat(request: Request):
@@ -191,7 +193,7 @@ async def create_chat(request: Request):
     except Exception as e:
         logging.error(f"Failed to generate embeddings: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to generate embeddings: {str(e)}")
-    
+
     index_name = "embed-project"
     os.environ['PINECONE_API_KEY'] = PINECONE_API_KEY
     docsearch = PC.from_existing_index(index_name=index_name, embedding=embeddings)
