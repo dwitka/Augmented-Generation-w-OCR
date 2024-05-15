@@ -27,6 +27,7 @@ httptools==0.6.1
 httpx==0.27.0
 huggingface-hub==0.23.0
 idna==3.7
+iniconfig==2.0.0
 jinja2==3.1.4
 jq==1.7.0
 jsonpatch==1.33
@@ -52,6 +53,7 @@ packaging==23.2
 pandas==2.0.3
 pillow==10.3.0
 pinecone-client==3.2.2
+pluggy==1.5.0
 pycparser==2.22
 pycryptodome==3.20.0
 pydantic==2.7.1
@@ -59,6 +61,9 @@ pydantic-core==2.18.2
 pygments==2.18.0
 pypdf==4.2.0
 pytesseract==0.3.10
+pytest==8.2.0
+pytest-asyncio==0.23.6
+pytest-mock==3.14.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 python-multipart==0.0.9
@@ -76,6 +81,7 @@ starlette==0.37.2
 tenacity==8.3.0
 tiktoken==0.6.0
 tokenizers==0.19.1
+tomli==2.0.1
 tqdm==4.66.4
 transformers==4.40.2
 typer==0.12.3
