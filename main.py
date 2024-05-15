@@ -85,7 +85,7 @@ async def upload_files(files: List[UploadFile] = File(...)):
             raise HTTPException(status_code=400, detail=f"Unsupported file format: {file_extension}")
 
         # Read the file content
-        filepath = 'media/' + afile.filename
+        filepath = 'test/' + afile.filename
         with open(filepath, 'rb') as f:
             contents = f.read()
 
