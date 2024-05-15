@@ -9,46 +9,35 @@ pip install -U langchain-pinecone
 pip install -U langchain-openai
 
 """
-
-from fastapi import FastAPI, UploadFile, File, HTTPException, Request
-from pinecone import Pinecone, ServerlessSpec, Index
-from keys import PINECONE_API_KEY, OPENAI_API_KEY
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_pinecone import Pinecone as PC
-from langchain_openai import OpenAI
-from langchain.chains.question_answering import load_qa_chain
-from minio import Minio
-from typing import List
-from io import BytesIO
-from PIL import Image
-from langchain_openai import OpenAIEmbeddings
-from langchain_community.document_loaders import JSONLoader
 import os
-import openai
 import json
-import requests
-import uuid
 import logging
+import uuid
+from io import BytesIO
+from typing import List
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.chains.question_answering import load_qa_chain
+from langchain_community.document_loaders import JSONLoader
+from langchain_pinecone import Pinecone as PC
+from langchain_openai import OpenAI, OpenAIEmbeddings
+from pinecone import Pinecone, ServerlessSpec
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
+from keys import PINECONE_API_KEY, OPENAI_API_KEY
+from minio import Minio
 
-# Custom filter to exclude log messages
-class WatchFileFilter(logging.Filter):
-    def filter(self, record):
-        return "watchfiles.main:1 change detected" not in record.getMessage()
 
 # Configure logging
 logging.basicConfig(filename='app.log', level=logging.INFO)
-logger = logging.getLogger()
-logger.addFilter(WatchFileFilter())
 
 app = FastAPI()
 
 # Initialize Pinecone client
 pc = Pinecone(api_key=PINECONE_API_KEY)
 
-index = "embed-project"
-if index not in pc.list_indexes().names():
+INDEX = "embed-project"
+if INDEX not in pc.list_indexes().names():
     pc.create_index(
-        name=index,
+        name=INDEX,
         dimension=1536,
         metric='cosine',
         spec=ServerlessSpec(
@@ -56,7 +45,7 @@ if index not in pc.list_indexes().names():
             region='us-east-1'
             )
         )
-idx = pc.Index(index)
+idx = pc.Index(INDEX)
 
 # Initialize Minio client
 minio_client = Minio(
@@ -70,18 +59,18 @@ minio_client = Minio(
 ACCEPTED_FORMATS = ["pdf", "tiff", "png", "jpeg"]
 
 
-# Saves the processed file to a cloud storage solution, returning one or
-# more unique file identifiers or signed URLs for the upload. You can use
-# tools like Minio to mimic blob storage.
 @app.post("/upload")
 async def upload_files(files: List[UploadFile] = File(...)):
+    """Saves the processed file to a cloud storage solution, returning one or
+    more unique file identifiers or signed URLs for the upload. You can use
+    tools like Minio to mimic blob storage."""
     logging.info('Endpoint /upload called')
     uploaded_files_urls = []
 
     for afile in files:
         file_extension = afile.filename.split(".")[-1].lower()
         if file_extension not in ACCEPTED_FORMATS:
-            logging.error(f"Unsupported file format: {file_extension}")
+            logging.error("Unsupported file format: %s", file_extension)
             raise HTTPException(status_code=400, \
                                     detail=f"Unsupported file format: {file_extension}")
 
@@ -102,10 +91,10 @@ async def upload_files(files: List[UploadFile] = File(...)):
                 BytesIO(contents),
                 len(contents)
             )
-            logging.info(f"Uploaded file {file_id} to Minio")
+            logging.info("Uploaded file %s to Minio", file_id)
         except Exception as e:
-            logging.error(f"Failed to upload file: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Failed to upload file: {str(e)}")
+            logging.error("Failed to upload file: %s", str(e))
+            raise HTTPException(status_code=500, detail=f"Failed to upload file: {str(e)}") from e
 
         # Get signed URL for the uploaded file
         url = minio_client.presigned_get_object("first", file_id)
@@ -116,21 +105,21 @@ async def upload_files(files: List[UploadFile] = File(...)):
     return uploaded_files_urls
 
 
-# Simulates running an OCR service on a file for a given a signed url.
-# Process OCR results with OpenAI's embedding models, then upload the
-# embeddings to a vector database (e.g, Pinecone) for future searches.
 @app.post("/ocr")
 async def ocr_and_upload_embeddings(request: Request):
+    """Simulates running an OCR service on a file for a given a signed url.
+    Process OCR results with OpenAI's embedding models, then upload the
+    embeddings to a vector database (e.g, Pinecone) for future searches."""
     logging.info('Endpoint /ocr called')
     payload = await request.json()
 
     # Retrieve signed url from payload
     try:
         url = payload["url"]
-        logging.info(f'Received URL: {url}')
+        logging.info('Received URL: %s', url)
     except Exception as e:
-        logging.error(f"No URL provided: {str(e)}")
-        raise HTTPException(status_code=400, detail=f"No url provided: {str(e)}")
+        logging.error("No URL provided: %s", str(e))
+        raise HTTPException(status_code=400, detail=f"No url provided: {str(e)}") from e
 
     # Simulate running OCR service on the file from signed URL
     try:
@@ -141,8 +130,8 @@ async def ocr_and_upload_embeddings(request: Request):
         texts = text_splitter.split_documents(data)
         logging.info('OCR performed successfully')
     except Exception as e:
-        logging.error(f"Failed to perform OCR: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to perform OCR: {str(e)}")
+        logging.error("Failed to perform OCR: %s", str(e))
+        raise HTTPException(status_code=500, detail=f"Failed to perform OCR: {str(e)}") from e
 
     # Process OCR results with OpenAI's embedding models
     try:
@@ -150,8 +139,9 @@ async def ocr_and_upload_embeddings(request: Request):
         embeddings = OpenAIEmbeddings(openai_api_key=openai_key)
         logging.info('Embeddings generated successfully')
     except Exception as e:
-        logging.error(f"Failed to generate embeddings: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to generate embeddings: {str(e)}")
+        logging.error("Failed to generate embeddings: %s", str(e))
+        raise HTTPException(status_code=500, \
+                                detail=f"Failed to generate embeddings: {str(e)}") from e
 
     # Upload embeddings to Pinecone vector database
     try:
@@ -162,37 +152,38 @@ async def ocr_and_upload_embeddings(request: Request):
         PC.from_texts([t.page_content for t in texts], embeddings, index_name=index_name)
         logging.info('Embeddings uploaded to Pinecone successfully')
     except Exception as e:
-        logging.error(f"Failed to upload embeddings to Pinecone: {str(e)}")
+        logging.error("Failed to upload embeddings to Pinecone: %s", str(e))
         raise HTTPException(status_code=500, \
-                                detail=f"Failed to upload embeddings to Pinecone: {str(e)}")
+                                detail=f"Failed to upload embeddings to Pinecone: {str(e)}") from e
 
     return "Embeddings uploaded to Pinecone successfully"
 
 
-# Takes a query text and file_id as input, performs a vector search and
-# returns matching attributes based on the embeddings. The vector search
-# will help in identifying the relevant part(s) of the file and you may
-# need to call openAI chat completion to generate the answer from the
-# search result.
 @app.post('/extract')
 async def create_chat(request: Request):
+    """Takes a query text and file_id as input, performs a vector search and
+    returns matching attributes based on the embeddings. The vector search
+    will help in identifying the relevant part(s) of the file and you may
+    need to call openAI chat completion to generate the answer from the
+    search result."""
     logging.info('Endpoint /extract called')
     payload = await request.json()
 
     try:
         query = payload["message"]
-        logging.info(f"Received message: {query}")
+        logging.info("Received message: %s", query)
     except Exception as e:
-        logging.error(f"No message provided: {str(e)}")
-        raise HTTPException(status_code=400, detail=f"No message provided: {str(e)}")
+        logging.error("No message provided: %s", str(e))
+        raise HTTPException(status_code=400, detail=f"No message provided: {str(e)}") from e
 
     try:
         openai_key = OPENAI_API_KEY
         embeddings = OpenAIEmbeddings(openai_api_key=openai_key)
         logging.info('Embeddings generated successfully')
     except Exception as e:
-        logging.error(f"Failed to generate embeddings: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to generate embeddings: {str(e)}")
+        logging.error("Failed to generate embeddings: %s", str(e))
+        raise HTTPException(status_code=500, \
+                                detail=f"Failed to generate embeddings: {str(e)}") from e
 
     index_name = "embed-project"
     os.environ['PINECONE_API_KEY'] = PINECONE_API_KEY
@@ -203,7 +194,7 @@ async def create_chat(request: Request):
 
     logging.info('Retrieving documents from Pinecone')
     docs = docsearch.similarity_search(query)
-    logging.info(f'Retrieved {len(docs)} documents')
+    logging.info('Retrieved %d documents', len(docs))
 
     logging.info('Executing QA chain')
     response = chain.run(input_documents=docs, question=query)
