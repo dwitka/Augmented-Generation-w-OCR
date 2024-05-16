@@ -21,9 +21,9 @@ from langchain_community.document_loaders import JSONLoader
 from langchain_pinecone import Pinecone as PC
 from langchain_openai import OpenAI, OpenAIEmbeddings
 from minio import Minio
-from keys import PINECONE_API_KEY, OPENAI_API_KEY
 from pinecone import Pinecone, ServerlessSpec
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request
+from keys import PINECONE_API_KEY, OPENAI_API_KEY
 
 
 # Configure logging
