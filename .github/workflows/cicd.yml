@@ -12,9 +12,32 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pylint pytest
+        pip install -r requirements.txt
+
+    - name: Lint with pylint
+      run: |
+        pylint $(git ls-files 'main.py')
+
+    - name: Run tests with pytest
+      run: |
+        pytest
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
@@ -32,11 +55,4 @@ jobs:
         file: ./Dockerfile
         push: true
         tags: ${{ secrets.DOCKER_USERNAME }}/my-image:latest
-
-    - name: Deploy to production
-      env:
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
-
-
 
