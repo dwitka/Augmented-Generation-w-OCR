@@ -17,8 +17,8 @@ COPY . /app
 EXPOSE 80 8000
 
 # Define environment variable
-ENV OPENAI_API_KEY
-ENV PINECONE_API_KEY
+ENV OPENAI_API_KEY='OPENAI_API_KEY'
+ENV PINECONE_API_KEY='PINECONE_API_KEY'
 
 # Run app.py when the container launches
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
