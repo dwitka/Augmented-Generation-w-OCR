@@ -33,3 +33,10 @@ jobs:
         push: true
         tags: ${{ secrets.DOCKER_USERNAME }}/my-image:latest
 
+    - name: Deploy to production
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
+
+
+

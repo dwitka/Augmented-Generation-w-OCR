@@ -23,8 +23,10 @@ from langchain_openai import OpenAI, OpenAIEmbeddings
 from minio import Minio
 from pinecone import Pinecone, ServerlessSpec
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request
-from keys import PINECONE_API_KEY, OPENAI_API_KEY
+#from keys import PINECONE_API_KEY, OPENAI_API_KEY
 
+PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 # Configure logging
 logging.basicConfig(filename='app.log', level=logging.INFO)
