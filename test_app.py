@@ -1,3 +1,7 @@
+"""
+Test module for OCR Retrieval Augmented Generation.
+"""
+
 import pytest
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
@@ -8,6 +12,7 @@ client = TestClient(app)
 
 @pytest.mark.asyncio
 async def test_upload_files_success(mock_minio, mock_uuid):
+    """Testing mock data upload for upload endpoint."""
     file_content = b"fake file content"
     mock_minio.put_object.return_value = None
     mock_minio.presigned_get_object.return_value = "http://example.com/fake-file-url"
@@ -35,7 +40,8 @@ async def test_upload_files_invalid_format():
     assert response.json() == {"detail": "Unsupported file format: txt"}
 
 @pytest.mark.asyncio
-async def test_ocr_and_upload_embeddings(mock_openai, mock_pinecone, mock_loader, mock_text_splitter):
+async def test_ocr_and_upload_embeddings(mock_openai, \
+                        mock_pinecone, mock_loader, mock_text_splitter):
     mock_loader.load.return_value = [{"text": "fake OCR result"}]
     mock_text_splitter.split_documents.return_value = ["chunk1", "chunk2"]
     mock_openai.return_value.embed_documents.return_value = ["embedding1", "embedding2"]
@@ -107,4 +113,3 @@ def mock_text_splitter(mocker):
 def mock_chain(mocker):
     mock_chain = mocker.patch("main.load_qa_chain", autospec=True)
     return mock_chain
-
