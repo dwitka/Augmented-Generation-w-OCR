@@ -20,9 +20,9 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain_community.document_loaders import JSONLoader
 from langchain_pinecone import Pinecone as PC
 from langchain_openai import OpenAI, OpenAIEmbeddings
+from keys import PINECONE_API_KEY, OPENAI_API_KEY
 from pinecone import Pinecone, ServerlessSpec
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request
-from keys import PINECONE_API_KEY, OPENAI_API_KEY
 from minio import Minio
 
 
