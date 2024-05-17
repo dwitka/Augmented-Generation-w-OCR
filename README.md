@@ -1,91 +1,92 @@
 # Retrieval-Augmented Generation (RAG) with Optical Character Recoginition (OCR)
+## you will need an openai api key and a pinecone api key to run the code
 
-Instructions are for Debian/Ubuntu systems:
+Docker inatallation instructions are for Ubuntu 20.04. For other OS go to https://docs.docker.com/engine/install
 
 ### OVERVIEW
-1. initiate local git repository
-2. clone repository from github
-3. get minio setup
-4. get a pinecone api_key from https://pinecone.io
-5. you will need a openai api_key https://platform.openai.com/
-6. add your api_keys to config.py
-7. set up your virtual environment
-8. install dependencies
-9. start minio server
-10. start fastapi server
-11. test upload endpoint with curl, confirm results
-12. test ocr endpoint with curl, confirm results
-13. test extract endpoint with curl, confirm results
+1. install docker
+2. login to Docker Hub
+3. build docker image from Docker Hub
+4. get docker container running
+5. upload one or more files to remote Minio blob bucket
+6. simulate ocr and upload embeddings to Pinecone vector database
+7. query the database with a semantic question
 
-### initiate local git repository
+### update the package index on your system
 ```
-$ git init .
+$ sudo apt update
 ```
 
-### clone repository from github, replace <pat> with your personal access token
+### install the required dependencies
 ```
-$ git clone https://<pat>@github.com/dwitka/Augmented-Generation-w-OCR.git
-```
-
-### get the minio package and install, create a minio directory
-```
-$ wget https://dl.min.io/server/minio/release/linux-amd64/archive/minio_20240507064125.0.0_amd64.deb -O minio.deb
-$ sudo dpkg -i minio.deb
-$ mkdir ./minio
+$ sudo apt install apt-transport-https ca-certificates curl software-properties-common
 ```
 
-### get your api_keys
-        - get a pinecone api_key from https://pinecone.io
-        - you will need a openai api_key https://platform.openai.com/
-
-### set up your virtual environment in the same folder as your git repository, activate
+### add Docker GPG Key
 ```
-$ python3 -m venv venv
-$ source venv/bin/activate
+$ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 ```
 
-### install your dependencies
+### add Docker Repository for Ubuntu 20.04 (Focal Fossa)
 ```
-$ pip install -r requirements.txt
-```
-
-### open a second terminal window and run the minio server
-```
-$ minio server ./minio --console-address :9001
+$ sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
 ```
 
-### open the minio portal in your web browser localhost:9001
-        - enter credentials given from minio server
-        - create a bucket named 'first'
-
-### open a third terminal window and start the fastapi server
+### update the package index once more to include the Docker packages from the newly added repository
 ```
-fastapi dev main.py
+$ sudo apt update
 ```
 
-### test upload endpoint: upload one or more files to minio server
+### install Docker Engine
 ```
-$ curl -X POST -F "files=@media/resume.pdf" http://localhost:8000/upload
-
-$ curl -X POST -F "files=@media/resume.pdf" -F "files=@media/SoftDocs.pdf" http://localhost:8000/upload
+$ sudo apt install docker-ce docker-ce-cli containerd.io
 ```
 
-### confrim that your bucket received the file(s) and it can be downloaded
-
-### test ocr endpoint: ocr and embeddings test
+### verify Installation
 ```
-curl -X POST -H "Content-Type: application/json" -d '{"url":"http://127.0.0.1:9000/first/acd9af0e-2708-4909-b81c-2eeb2009888a?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20240512%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240512T000021Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=2cd3409b453a17f74205282b70dff1dc411fbf35a532bce47008a686431ab0e9"}' http://localhost:8000/ocr
+$ sudo docker --version
 ```
 
-### test extract endpoint: extract attributes
+### manage Docker as a Non-root User
+```
+$ sudo usermod -aG docker $USER
+```
+
+### activate the changes in your current shell session
+```
+$ newgrp docker
+```
+
+### login to Docker Hub
+```
+$ docker login
+```
+
+### build docker image from Docker Hub
+```
+$ docker build -t davidwitka/my-image .
+```
+
+### get docker container running
+```
+$ docker run -d -p 8000:80 --name my-app -e OPENAI_API_KEY=your-openai-key -e PINECONE_API_KEY=your-pinecone-key davidwitka/my-image
+```
+
+### upload one or more files to remote Minio blob bucket
+```
+$ curl -X POST -F "files=@test/resume.pdf" http://localhost:8000/upload
+
+$ curl -X POST -F "files=@test/resume.pdf" -F "files=@test/SoftDocs.pdf" http://localhost:8000/upload
+```
+
+## ***\*\*enter the returned url into the next code block\*\****
+
+### simulate ocr and upload embeddings to Pinecone vector database
+```
+$ curl -X POST -H "Content-Type: application/json" -d '{"url":"http://127.0.0.1:9000/first/acd9af0e-2708-4909-b81c-2eeb2009888a?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20240512%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240512T000021Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=2cd3409b453a17f74205282b70dff1dc411fbf35a532bce47008a686431ab0e9"}' http://localhost:8000/ocr
+```
+
+### extract attributes: query the database with a semantic search
 ```
 $ curl -X POST -H "Content-Type: application/json" -d '{"message":"How much money does User2 want for the bag?"}' http://localhost:8000/extract
 ```
-
-# HOW DOES THIS APP WORK?
-1. load files to minio
-2. get file from minio and simulate ocr
-3. get embeddings for file
-4. upload embeddings to pinecone
-5. turn message into embeddings
-6. run vector search to generate an answer
