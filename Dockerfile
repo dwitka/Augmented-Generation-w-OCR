@@ -6,6 +6,10 @@ WORKDIR /app
 
 # Copy requirements.txt into the container at /app
 COPY ./requirements.txt /app
+COPY ocr /app/ocr
+COPY sample /app/sample
+COPY test /app/test
+
 
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
