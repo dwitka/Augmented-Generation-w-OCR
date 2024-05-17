@@ -1,13 +1,6 @@
 """
-
 A Python-based backend API using FastAPI. The API features endpoints for file
 uploads, a mock OCR function, and an attribute extraction mechanism powered by RAG.
-
-!!!! DON'T FORGET TO TEST ENDPOINTS WITH POSTMAN !!!!
-
-pip install -U langchain-pinecone
-pip install -U langchain-openai
-
 """
 import os
 import json
@@ -23,7 +16,6 @@ from langchain_openai import OpenAI, OpenAIEmbeddings
 from minio import Minio
 from pinecone import Pinecone, ServerlessSpec
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request
-#from keys import PINECONE_API_KEY, OPENAI_API_KEY
 
 PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -206,4 +198,4 @@ async def create_chat(request: Request):
 
     return json.dumps(response)
 
-# test ci again
+# EOF

@@ -29,6 +29,7 @@ async def test_upload_files_success(mock_minio, mock_uuid):
 
 @pytest.mark.asyncio
 async def test_upload_files_invalid_format():
+    """Testing wrong file format for file upload."""
     file_content = b"fake file content"
     files = {
         "files": ("test.txt", file_content, "text/plain"),
@@ -42,6 +43,7 @@ async def test_upload_files_invalid_format():
 @pytest.mark.asyncio
 async def test_ocr_and_upload_embeddings(mock_openai, \
                         mock_pinecone, mock_loader, mock_text_splitter):
+    """Testing /ocr endpoint with fake data."""
     mock_loader.load.return_value = [{"text": "fake OCR result"}]
     mock_text_splitter.split_documents.return_value = ["chunk1", "chunk2"]
     mock_openai.return_value.embed_documents.return_value = ["embedding1", "embedding2"]
@@ -56,6 +58,7 @@ async def test_ocr_and_upload_embeddings(mock_openai, \
 
 @pytest.mark.asyncio
 async def test_ocr_and_upload_embeddings_no_url():
+    """Testing response with no url."""
     payload = {}
 
     response = client.post("/ocr", json=payload)
@@ -65,6 +68,7 @@ async def test_ocr_and_upload_embeddings_no_url():
 
 @pytest.mark.asyncio
 async def test_create_chat_no_message():
+    """Testing /extract endpoint no message returned."""
     payload = {}
 
     response = client.post("/extract", json=payload)
