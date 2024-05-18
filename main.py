@@ -179,17 +179,24 @@ async def create_chat(request: Request):
         raise HTTPException(status_code=500, \
                                 detail=f"Failed to generate embeddings: {str(e)}") from e
 
+    # initialize the connection to a vector database
     index_name = "embed-project"
     os.environ['PINECONE_API_KEY'] = PINECONE_API_KEY
+
+    # set up the embedding model for search
     docsearch = PC.from_existing_index(index_name=index_name, embedding=embeddings)
 
+    # set up the llm
     llm = OpenAI(temperature=0, openai_api_key=openai_key)
     chain = load_qa_chain(llm, chain_type="stuff")
 
+    # attribute extraction: return relevant chunks of text from the vector database
+    # based on the query's embeddings
     logging.info('Retrieving documents from Pinecone')
     docs = docsearch.similarity_search(query)
     logging.info('Retrieved %d documents', len(docs))
 
+    # generate a response from the query
     logging.info('Executing QA chain')
     response = chain.run(input_documents=docs, question=query)
 
